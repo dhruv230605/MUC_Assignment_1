@@ -2,64 +2,117 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@drawable/bg_gradient"
+    android:padding="24dp">
 
-    <!-- App Title -->
-    <TextView
-        android:id="@+id/tvTitle"
+    <!-- Header Section -->
+    <LinearLayout
+        android:id="@+id/headerLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="My Virtual Pet 🐾"
-        android:textSize="26sp"
-        android:textStyle="bold"
+        android:orientation="vertical"
+        android:gravity="center"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="40dp">
 
-    <!-- Pet Name Input -->
-    <EditText
-        android:id="@+id/etPetName"
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="My Virtual Pet"
+            android:textColor="@color/primary"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-black"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Adopt your new best friend! 🐾"
+            android:textColor="@color/text_main"
+            android:textSize="18sp"
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
+
+    <!-- Name Input Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/inputCard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="Enter pet name"
-        android:inputType="textPersonName"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        android:layout_marginTop="40dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        app:layout_constraintTop_toBottomOf="@id/headerLayout"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="20dp"/>
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- RecyclerView Label -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:hint="Pet Name"
+            app:startIconDrawable="@android:drawable/ic_menu_edit"
+            app:boxCornerRadiusTopStart="16dp"
+            app:boxCornerRadiusTopEnd="16dp"
+            app:boxCornerRadiusBottomStart="16dp"
+            app:boxCornerRadiusBottomEnd="16dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etPetName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName"
+                android:maxLines="1"/>
+        </com.google.android.material.textfield.TextInputLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Selection Label -->
     <TextView
         android:id="@+id/tvSelectPet"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Choose your pet"
-        android:textSize="18sp"
+        android:text="Pick a Buddy"
+        android:textColor="@color/text_main"
+        android:textSize="22sp"
         android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@id/etPetName"
+        app:layout_constraintTop_toBottomOf="@id/inputCard"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="20dp"/>
+        android:layout_marginTop="32dp"/>
 
     <!-- Pet RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvPets"
         android:layout_width="0dp"
-        android:layout_height="120dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="24dp"
         app:layout_constraintTop_toBottomOf="@id/tvSelectPet"
+        app:layout_constraintBottom_toTopOf="@id/btnStart"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="12dp"/>
+        tools:listitem="@layout/item_pet"
+        android:overScrollMode="never"/>
 
     <!-- Start Button -->
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnStart"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Adopt Pet"
+        android:layout_height="70dp"
+        android:text="ADOPT NOW"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:cornerRadius="35dp"
+        app:elevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/primaryVariant"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
