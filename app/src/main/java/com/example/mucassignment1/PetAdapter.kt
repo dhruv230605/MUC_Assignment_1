@@ -32,6 +32,7 @@ class PetAdapter(
         holder.petImage.setImageResource(pet.imageResId)
 
         // Highlight selected pet
+        //Extra feature implemented here!!!
         holder.itemView.alpha = if (position == selectedPosition) 1.0f else 0.5f
 
         holder.itemView.setOnClickListener {
