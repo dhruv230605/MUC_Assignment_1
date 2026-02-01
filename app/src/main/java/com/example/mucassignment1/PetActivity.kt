@@ -47,7 +47,7 @@ class PetActivity : AppCompatActivity() {
 
     // Runnable for tired state
     private val tiredRunnable = Runnable {
-        if (currentState != STATE_ANGRY && currentState != STATE_HUNGRY) {
+        if (currentState != STATE_HUNGRY) {
             tvStatus.text = "I'm tired 😴"
             updatePetImage(STATE_TIRED)
 //            updateMood(-50)
@@ -62,6 +62,7 @@ class PetActivity : AppCompatActivity() {
     private fun resetTiredTimer() {
         imgPet.removeCallbacks(tiredRunnable)
         imgPet.postDelayed(tiredRunnable, 5* 60* 1000)
+//        imgPet.postDelayed(tiredRunnable, 20* 1000)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
