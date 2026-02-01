@@ -10,6 +10,8 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.BatteryManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.ImageView
@@ -24,6 +26,7 @@ class PetActivity : AppCompatActivity() {
     private lateinit var moodBar: ProgressBar
     private lateinit var tvStatus: TextView
     private lateinit var imgPet: ImageView
+    private lateinit var tvTimer: TextView
 
     // Pet state constants (NO enum)
     private val STATE_NORMAL = 0
@@ -33,6 +36,7 @@ class PetActivity : AppCompatActivity() {
 
     private var currentState = STATE_NORMAL
     private var tapCount = 0
+    private var secondsElapsed = 0
 
     private lateinit var petType: String
     private lateinit var batteryReceiver: BroadcastReceiver
@@ -50,7 +54,6 @@ class PetActivity : AppCompatActivity() {
         if (currentState != STATE_HUNGRY) {
             tvStatus.text = "I'm tired 😴"
             updatePetImage(STATE_TIRED)
-//            updateMood(-50)
             moodLevel = 20
             moodBar.progress = moodLevel
 
@@ -59,10 +62,23 @@ class PetActivity : AppCompatActivity() {
         }
     }
 
+    // Runnable for the visible timer
+    private val timerRunnable = object : Runnable {
+        override fun run() {
+            secondsElapsed++
+            val minutes = secondsElapsed / 60
+            val seconds = secondsElapsed % 60
+            tvTimer.text = String.format("Time together: %02d:%02d", minutes, seconds)
+            handler.postDelayed(this, 1000)
+        }
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+
     private fun resetTiredTimer() {
         imgPet.removeCallbacks(tiredRunnable)
-        imgPet.postDelayed(tiredRunnable, 5* 60* 1000)
-//        imgPet.postDelayed(tiredRunnable, 20* 1000)
+        // 5 minutes (300,000 ms)
+        imgPet.postDelayed(tiredRunnable, 5* 60 * 1000)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,6 +89,7 @@ class PetActivity : AppCompatActivity() {
         imgPet = findViewById(R.id.imgPet)
         tvStatus = findViewById(R.id.tvStatus)
         moodBar = findViewById(R.id.moodBar)
+        tvTimer = findViewById(R.id.tvTimer)
         val btnGoodTouch = findViewById<Button>(R.id.btnGoodTouch)
         val btnBadTouch = findViewById<Button>(R.id.btnBadTouch)
 
@@ -85,13 +102,11 @@ class PetActivity : AppCompatActivity() {
         // Start in normal state
         updatePetImage(STATE_NORMAL)
         updateMood(0)
-        resetTiredTimer()
 
         // Good touch
         btnGoodTouch.setOnClickListener {
             if (currentState == STATE_HUNGRY) return@setOnClickListener
             updateMood(10)
-            resetTiredTimer()
         }
 
         // Bad touch
@@ -99,7 +114,6 @@ class PetActivity : AppCompatActivity() {
             if (currentState == STATE_HUNGRY) return@setOnClickListener
             updateMood(-15)
             playAngryShake(imgPet)
-            resetTiredTimer()
         }
 
         // Pet tapping logic (Angry state)
@@ -111,13 +125,10 @@ class PetActivity : AppCompatActivity() {
             imgPet.removeCallbacks(calmDownRunnable)
             imgPet.postDelayed(calmDownRunnable, 10_000)
             
-            resetTiredTimer()
-
             if (tapCount > 5) {
                 tvStatus.text = "Stop it! I'm angry 😡"
                 updatePetImage(STATE_ANGRY)
                 playAngryShake(imgPet)
-//                updateMood(-100)
                 moodLevel = 20
                 moodBar.progress = moodLevel
 
@@ -149,6 +160,28 @@ class PetActivity : AppCompatActivity() {
             }
         }
         registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Reset timers for "continuous" open requirement
+        secondsElapsed = 0
+        tvTimer.text = "Time together: 00:00"
+
+        // If the pet was tired, reset it to normal because the "continuous" session was broken
+        if (currentState == STATE_TIRED) {
+            updatePetImage(STATE_NORMAL)
+            updateMood(80) // Restore mood to happy/green
+        }
+        
+        resetTiredTimer()
+        handler.post(timerRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        imgPet.removeCallbacks(tiredRunnable)
+        handler.removeCallbacks(timerRunnable)
     }
 
     // Dynamically update pet image based on state + pet type
@@ -222,6 +255,7 @@ class PetActivity : AppCompatActivity() {
         super.onDestroy()
         imgPet.removeCallbacks(calmDownRunnable)
         imgPet.removeCallbacks(tiredRunnable)
+        handler.removeCallbacks(timerRunnable)
         unregisterReceiver(batteryReceiver)
     }
 }
