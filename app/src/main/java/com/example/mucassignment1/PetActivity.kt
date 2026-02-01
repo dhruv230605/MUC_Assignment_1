@@ -37,6 +37,33 @@ class PetActivity : AppCompatActivity() {
     private lateinit var petType: String
     private lateinit var batteryReceiver: BroadcastReceiver
 
+    // Runnable to reset tap count and calm the pet down after 10 seconds of inactivity
+    private val calmDownRunnable = Runnable {
+        tapCount = 0
+        if (currentState != STATE_HUNGRY) {
+            updateMood(25)
+        }
+    }
+
+    // Runnable for tired state
+    private val tiredRunnable = Runnable {
+        if (currentState != STATE_ANGRY && currentState != STATE_HUNGRY) {
+            tvStatus.text = "I'm tired 😴"
+            updatePetImage(STATE_TIRED)
+//            updateMood(-50)
+            moodLevel = 20
+            moodBar.progress = moodLevel
+
+            val barColor = Color.parseColor("#F44336") // Red
+            moodBar.progressTintList = ColorStateList.valueOf(barColor)
+        }
+    }
+
+    private fun resetTiredTimer() {
+        imgPet.removeCallbacks(tiredRunnable)
+        imgPet.postDelayed(tiredRunnable, 5* 60* 1000)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pet)
@@ -57,61 +84,66 @@ class PetActivity : AppCompatActivity() {
         // Start in normal state
         updatePetImage(STATE_NORMAL)
         updateMood(0)
+        resetTiredTimer()
 
         // Good touch
         btnGoodTouch.setOnClickListener {
+            if (currentState == STATE_HUNGRY) return@setOnClickListener
             updateMood(10)
+            resetTiredTimer()
         }
 
         // Bad touch
         btnBadTouch.setOnClickListener {
+            if (currentState == STATE_HUNGRY) return@setOnClickListener
             updateMood(-15)
             playAngryShake(imgPet)
+            resetTiredTimer()
         }
 
         // Pet tapping logic (Angry state)
         imgPet.setOnClickListener {
+            if (currentState == STATE_HUNGRY) return@setOnClickListener
             tapCount++
+            
+            // Restart the calm down timer every time the pet is tapped
+            imgPet.removeCallbacks(calmDownRunnable)
+            imgPet.postDelayed(calmDownRunnable, 10_000)
+            
+            resetTiredTimer()
+
             if (tapCount > 5) {
                 tvStatus.text = "Stop it! I'm angry 😡"
                 updatePetImage(STATE_ANGRY)
                 playAngryShake(imgPet)
-            } else {
-                updateMood(5)
+//                updateMood(-100)
+                moodLevel = 20
+                moodBar.progress = moodLevel
+
+                val barColor = Color.parseColor("#F44336") // Red
+                moodBar.progressTintList = ColorStateList.valueOf(barColor)
             }
         }
 
-        // Calm down after 10 seconds
-        imgPet.postDelayed({
-            tapCount = 0
-            if (currentState == STATE_ANGRY) {
-                tvStatus.text = "I'm calm now 🙂"
-                updatePetImage(STATE_NORMAL)
-            }
-        }, 10_000)
-
         // Breathing animation
         startBreathingAnimation()
-
-        // Tired state after 5 minutes
-        imgPet.postDelayed({
-            if (currentState != STATE_ANGRY && currentState != STATE_HUNGRY) {
-                tvStatus.text = "I'm tired 😴"
-                updatePetImage(STATE_TIRED)
-            }
-        }, 5 * 60 * 1000)
 
         // Battery receiver (Hungry state)
         batteryReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 val level = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: return
 
-                if (level < 20 && currentState != STATE_ANGRY) {
+                if (level < 20) {
                     tvStatus.text = "I'm hungry 😢"
                     updatePetImage(STATE_HUNGRY)
-                } else if (level >= 20 && currentState == STATE_HUNGRY) {
-                    tvStatus.text = "I'm feeling better 🙂"
-                    updatePetImage(STATE_NORMAL)
+                    moodLevel = 20
+                    moodBar.progress = moodLevel
+
+                    val barColor = Color.parseColor("#F44336") // Red
+                    moodBar.progressTintList = ColorStateList.valueOf(barColor)
+                }
+                else if (level >= 20 && currentState == STATE_HUNGRY) {
+                    updateMood(5)
                 }
             }
         }
@@ -142,26 +174,24 @@ class PetActivity : AppCompatActivity() {
         moodBar.progress = moodLevel
 
         val barColor = when {
-            moodLevel > 70 -> Color.parseColor("#4CAF50")
-            moodLevel >= 25 -> Color.parseColor("#FFC107")
-            else -> Color.parseColor("#F44336")
+            moodLevel > 70 -> Color.parseColor("#4CAF50") // Green
+            moodLevel >= 25 -> Color.parseColor("#FFC107") // Yellow
+            else -> Color.parseColor("#F44336") // Red
         }
         moodBar.progressTintList = ColorStateList.valueOf(barColor)
 
-        when {
-            moodLevel < 25 && currentState != STATE_HUNGRY -> {
-                tvStatus.text = "I'm very angry 😡"
-                updatePetImage(STATE_ANGRY)
-            }
-
-            moodLevel >= 80 &&
-                    currentState != STATE_HUNGRY &&
-                    currentState != STATE_NORMAL -> {
-                tvStatus.text = "I'm happy 😄"
-                updatePetImage(STATE_NORMAL)
-            }
+        if (moodLevel > 70) {
+            tvStatus.text = "I'm happy 😄"
+            updatePetImage(STATE_NORMAL)
         }
-
+        else if (moodLevel < 25) {
+            tvStatus.text = "I'm very angry 😡"
+            updatePetImage(STATE_ANGRY)
+        }
+        else {
+            tvStatus.text = "I'm okay 😐"
+            updatePetImage(STATE_NORMAL)
+        }
     }
 
     // Breathing animation
@@ -189,6 +219,8 @@ class PetActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        imgPet.removeCallbacks(calmDownRunnable)
+        imgPet.removeCallbacks(tiredRunnable)
         unregisterReceiver(batteryReceiver)
     }
 }
